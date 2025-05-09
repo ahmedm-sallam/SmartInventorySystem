@@ -1,0 +1,97 @@
+version: '3'
+
+services:
+  product-service:
+    build: ./product_service
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./product.db}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGHOST=${PGHOST:-postgres}
+      - PGPORT=${PGPORT:-5432}
+      - PGDATABASE=${PGDATABASE:-product_db}
+    volumes:
+      - ./product_service:/app
+    networks:
+      - smart-inventory
+
+  inventory-service:
+    build: ./inventory_service
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./inventory.db}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGHOST=${PGHOST:-postgres}
+      - PGPORT=${PGPORT:-5432}
+      - PGDATABASE=${PGDATABASE:-inventory_db}
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+    volumes:
+      - ./inventory_service:/app
+    depends_on:
+      - product-service
+    networks:
+      - smart-inventory
+
+  order-service:
+    build: ./order_service
+    ports:
+      - "8003:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./order.db}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGHOST=${PGHOST:-postgres}
+      - PGPORT=${PGPORT:-5432}
+      - PGDATABASE=${PGDATABASE:-order_db}
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - INVENTORY_SERVICE_URL=http://inventory-service:8000
+    volumes:
+      - ./order_service:/app
+    depends_on:
+      - product-service
+      - inventory-service
+    networks:
+      - smart-inventory
+
+  notification-service:
+    build: ./notification_service
+    ports:
+      - "8004:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./notification.db}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGHOST=${PGHOST:-postgres}
+      - PGPORT=${PGPORT:-5432}
+      - PGDATABASE=${PGDATABASE:-notification_db}
+    volumes:
+      - ./notification_service:/app
+    networks:
+      - smart-inventory
+
+  api-gateway:
+    build: ./api_gateway
+    ports:
+      - "5000:8000"
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - INVENTORY_SERVICE_URL=http://inventory-service:8000
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8000
+    volumes:
+      - ./api_gateway:/app
+    depends_on:
+      - product-service
+      - inventory-service
+      - order-service
+      - notification-service
+    networks:
+      - smart-inventory
+
+networks:
+  smart-inventory:
+    driver: bridge
