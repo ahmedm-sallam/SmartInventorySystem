@@ -31,7 +31,7 @@ Each service is containerized using Docker and communicates via HTTP.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/SmartInventorySystem.git
+   git clone https://github.com/ahmedm-sallam/SmartInventorySystem
    cd SmartInventorySystem
    ```
 
